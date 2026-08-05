@@ -1,0 +1,7 @@
+.vs/
+bin/
+obj/
+node_modules/
+*.bak
+*.tmp
+_test_compare.json
