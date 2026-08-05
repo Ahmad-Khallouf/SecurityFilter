@@ -1,0 +1,9 @@
+# .NET build output
+bin/
+obj/
+
+# Uploaded files (test artifacts — should not be committed)
+uploads/
+
+# User-specific
+*.user

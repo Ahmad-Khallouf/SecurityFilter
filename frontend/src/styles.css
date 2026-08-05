@@ -1,0 +1,961 @@
+/* ==========================================================================
+   SecureUploader — evidence console
+   --------------------------------------------------------------------------
+   The job of this interface is to make an invisible process visible: nine
+   layers ran, in order, in measurable time, and this is where each one stopped
+   or passed the file.
+
+   Palette is instrument-panel, not terminal: a deep blue-ink ground with an
+   amber signal lamp. Three verdict colours, because this project has three
+   outcomes, not two — the third, "accepted but rewritten", is neutralization,
+   and it gets its own colour because it is the distinction the whole project
+   turns on.
+
+   Display face is monospace, set uppercase and widely tracked; body is system
+   sans. The inversion is deliberate — this is a byte-inspection tool, so the
+   data face leads and prose follows.
+   ========================================================================== */
+
+:root {
+    /* Ground */
+    --ink: #0E1419;
+    --panel: #151D24;
+    --panel-2: #1C262F;
+    --panel-3: #232F3A;
+    --line: #2A3843;
+    --line-soft: #202B34;
+    /* Text */
+    --text: #D8E0E6;
+    --text-dim: #9BAAB6;
+    --muted: #6E7F8C;
+    /* Signal */
+    --amber: #E8A33D;
+    --amber-dim: #8A6323;
+    --jade: #4FB286;
+    --jade-dim: #2C6650;
+    --rose: #E06C75;
+    --rose-dim: #7A3B41;
+    --cyan: #5AA9C7;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --r: 3px;
+    --shadow: 0 1px 0 rgba(255,255,255,.03) inset, 0 8px 24px rgba(0,0,0,.35);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html, body, #root {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    background: radial-gradient(1200px 600px at 50% -10%, #17222B 0%, transparent 70%), var(--ink);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Shell ---------------------------------------------------- */
+
+.app {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 24px 72px;
+}
+
+.topbar {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    padding: 28px 0 20px;
+    border-bottom: 1px solid var(--line);
+}
+
+.wordmark {
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--text);
+    margin: 0;
+}
+
+    .wordmark span {
+        color: var(--amber);
+    }
+
+.tagline {
+    margin: 0;
+    color: var(--muted);
+    font-size: 12.5px;
+}
+
+.demo-flag {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    padding: 4px 9px;
+    border: 1px solid var(--amber-dim);
+    color: var(--amber);
+    border-radius: var(--r);
+    white-space: nowrap;
+}
+
+    .demo-flag.off {
+        border-color: var(--line);
+        color: var(--muted);
+    }
+
+/* ---------- Tabs ------------------------------------------------------ */
+
+.tabs {
+    display: flex;
+    gap: 2px;
+    margin: 0 0 28px;
+    border-bottom: 1px solid var(--line);
+}
+
+.tab {
+    appearance: none;
+    background: none;
+    border: 0;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    padding: 13px 18px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: color .15s ease, border-color .15s ease;
+}
+
+    .tab:hover {
+        color: var(--text-dim);
+    }
+
+    .tab.active {
+        color: var(--text);
+        border-bottom-color: var(--amber);
+    }
+
+    .tab:focus-visible {
+        outline: 2px solid var(--cyan);
+        outline-offset: -4px;
+    }
+
+/* ---------- Section headings ------------------------------------------ */
+
+.eyebrow {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 10px;
+}
+
+.lede {
+    color: var(--text-dim);
+    margin: 0 0 22px;
+    max-width: 62ch;
+}
+
+/* ---------- Cards / dropzone ------------------------------------------ */
+
+.grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+}
+
+.card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    padding: 20px;
+    box-shadow: var(--shadow);
+}
+
+.card-head h2 {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    margin: 0 0 4px;
+    color: var(--text);
+}
+
+.card-head p {
+    margin: 0 0 16px;
+    color: var(--muted);
+    font-size: 12.5px;
+}
+
+.dropzone {
+    border: 1px dashed var(--line);
+    border-radius: var(--r);
+    background: var(--panel-2);
+    min-height: 132px;
+    display: grid;
+    place-items: center;
+    padding: 18px;
+    cursor: pointer;
+    transition: border-color .15s ease, background .15s ease;
+}
+
+    .dropzone:hover, .dropzone.drag {
+        border-color: var(--amber-dim);
+        background: var(--panel-3);
+    }
+
+    .dropzone:focus-visible {
+        outline: 2px solid var(--cyan);
+        outline-offset: 2px;
+    }
+
+.dz-empty {
+    display: grid;
+    gap: 8px;
+    justify-items: center;
+    color: var(--muted);
+    text-align: center;
+}
+
+.dz-icon {
+    font-size: 20px;
+    color: var(--amber);
+}
+
+.dz-hint {
+    font-size: 12px;
+}
+
+.preview {
+    max-width: 100%;
+    max-height: 160px;
+    border-radius: 2px;
+    display: block;
+}
+
+.filemeta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    align-items: baseline;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line-soft);
+    font-family: var(--mono);
+    font-size: 11.5px;
+}
+
+    .filemeta strong {
+        color: var(--text);
+        font-weight: 500;
+        word-break: break-all;
+    }
+
+.muted {
+    color: var(--muted);
+}
+
+/* ---------- Buttons --------------------------------------------------- */
+
+.actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.btn {
+    appearance: none;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    padding: 10px 16px;
+    border-radius: var(--r);
+    cursor: pointer;
+    border: 1px solid var(--line);
+    background: var(--panel-3);
+    color: var(--text);
+    transition: background .15s ease, border-color .15s ease, opacity .15s ease;
+}
+
+    .btn:hover:not(:disabled) {
+        border-color: var(--muted);
+    }
+
+    .btn:focus-visible {
+        outline: 2px solid var(--cyan);
+        outline-offset: 2px;
+    }
+
+    .btn:disabled {
+        opacity: .38;
+        cursor: not-allowed;
+    }
+
+    .btn.primary {
+        background: var(--amber);
+        border-color: var(--amber);
+        color: #14100A;
+        font-weight: 600;
+    }
+
+        .btn.primary:hover:not(:disabled) {
+            background: #F2B052;
+            border-color: #F2B052;
+        }
+
+/* ---------- Verdict --------------------------------------------------- */
+
+.result {
+    margin-top: 20px;
+    border-top: 1px solid var(--line);
+    padding-top: 18px;
+}
+
+.verdict {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex: none;
+}
+
+    .dot.pass {
+        background: var(--jade);
+        box-shadow: 0 0 0 3px rgba(79,178,134,.15);
+    }
+
+    .dot.fail {
+        background: var(--rose);
+        box-shadow: 0 0 0 3px rgba(224,108,117,.15);
+    }
+
+    .dot.rewrite {
+        background: var(--amber);
+        box-shadow: 0 0 0 3px rgba(232,163,61,.15);
+    }
+
+.verdict-label {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+}
+
+    .verdict-label.pass {
+        color: var(--jade);
+    }
+
+    .verdict-label.fail {
+        color: var(--rose);
+    }
+
+.badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: var(--r);
+    border: 1px solid var(--amber-dim);
+    color: var(--amber);
+}
+
+    .badge.neutral {
+        border-color: var(--line);
+        color: var(--muted);
+    }
+
+.result-msg {
+    color: var(--text-dim);
+    margin: 10px 0 0;
+    font-size: 13px;
+}
+
+/* ---------- SIGNATURE: the pipeline rail ------------------------------ */
+/* The file's journey drawn as a spine. The spine is jade while the file is
+   still travelling and stops dead at the layer that rejected it, so the
+   fail-fast funnel is legible at a glance rather than described in prose. */
+
+.rail {
+    margin: 20px 0 0;
+    padding: 0;
+    list-style: none;
+    position: relative;
+}
+
+    .rail::before {
+        content: "";
+        position: absolute;
+        left: 7px;
+        top: 10px;
+        bottom: 10px;
+        width: 1px;
+        background: var(--line);
+    }
+
+.rail-node {
+    position: relative;
+    display: grid;
+    grid-template-columns: 22px 1fr auto auto;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 0;
+    animation: node-in .28s ease both;
+}
+
+    .rail-node::before {
+        content: "";
+        grid-column: 1;
+        width: 7px;
+        height: 7px;
+        margin-left: 4px;
+        border-radius: 50%;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        z-index: 1;
+    }
+
+    .rail-node.pass::before {
+        background: var(--jade-dim);
+        border-color: var(--jade);
+    }
+
+    .rail-node.rewrite::before {
+        background: var(--amber-dim);
+        border-color: var(--amber);
+    }
+
+    .rail-node.fail::before {
+        background: var(--rose-dim);
+        border-color: var(--rose);
+    }
+
+.rail-layer {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    word-break: break-word;
+}
+
+.rail-node.fail .rail-layer {
+    color: var(--rose);
+}
+
+.rail-tag {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    border: 1px solid var(--line);
+    padding: 2px 6px;
+    border-radius: var(--r);
+    white-space: nowrap;
+}
+
+.rail-ms {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--muted);
+    text-align: right;
+    min-width: 66px;
+    font-variant-numeric: tabular-nums;
+}
+
+.rail-reason {
+    grid-column: 2 / -1;
+    font-size: 12px;
+    color: var(--rose);
+    padding-top: 4px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.rail-total {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line-soft);
+}
+
+@keyframes node-in {
+    from {
+        opacity: 0;
+        transform: translateY(-3px);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+/* ---------- Evidence, inside a rail node ------------------------------ */
+/* A layer's conclusion is one line; its observations are what make the
+   conclusion checkable. They live inside the node so a finding stays attached
+   to the layer that made it.
+
+   The node is a four-column grid (dot / name / tag / timing), so anything added
+   as a further child lands in the next free CELL rather than on a row of its
+   own. Both blocks therefore span the full track, starting at column 2 to sit
+   flush with .rail-reason and clear of the spine. 2 / -1 survives the mobile
+   breakpoint, which drops the node to three columns.
+
+   Colour: severity only, and only from the palette already in use. There is no
+   fourth hue for 'unknown' — that value marks a SCANNER FAILURE rather than a
+   finding, so it steps off the verdict scale entirely with a dashed rule. A new
+   colour would have implied a fourth outcome, and this project has three. */
+
+.rail-node > .rail-ev-toggle,
+.rail-node > .rail-ev {
+    grid-column: 2 / -1;
+}
+
+.rail-ev-toggle {
+    justify-self: start;
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 0 0;
+    padding: 3px 0;
+    border: 0;
+    background: none;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color .15s ease;
+}
+
+    .rail-ev-toggle:hover {
+        color: var(--text-dim);
+    }
+
+    .rail-ev-toggle:focus-visible {
+        outline: 2px solid var(--cyan);
+        outline-offset: 2px;
+    }
+
+.rail-ev-count {
+    padding: 2px 6px;
+    border-radius: var(--r);
+    border: 1px solid var(--amber-dim);
+    color: var(--amber);
+    font-size: 9.5px;
+    letter-spacing: .12em;
+    white-space: nowrap;
+}
+
+.rail-ev {
+    margin: 8px 0 4px;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 1px;
+    background: var(--line-soft);
+    border-radius: var(--r);
+    overflow: hidden;
+}
+
+.rail-ev-item {
+    padding: 9px 12px;
+    background: var(--panel-2);
+    border-left: 2px solid var(--line);
+    min-width: 0;
+}
+
+.rail-ev-head {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-width: 0;
+}
+
+/* Monospace for anything a reader compares against a hex editor or a rules
+   file: the label is an identifier and the offset is an address, not prose.
+   Rule labels are long and unbroken, so they must be told where they may wrap
+   or they force the row wider than its column. */
+.rail-ev-label, .rail-ev-at {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    overflow-wrap: anywhere;
+    min-width: 0;
+}
+
+.rail-ev-label {
+    color: var(--text);
+}
+
+.rail-ev-at {
+    color: var(--muted);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+/* The grouping key the corpus tally is built from. Kept visible but pushed to
+   the end and dimmed: least useful field when reading a single result. */
+.rail-ev-kind {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: .1em;
+    color: var(--line);
+    white-space: nowrap;
+}
+
+.rail-ev-detail {
+    margin: 5px 0 0;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text-dim);
+    overflow-wrap: anywhere;
+}
+
+.rail-ev-ref {
+    margin: 5px 0 0;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--muted);
+    overflow-wrap: anywhere;
+}
+
+/* Severity ramp — rose, amber, dim amber, hairline. */
+.rail-ev-item.ev-high {
+    border-left-color: var(--rose);
+    background: rgba(224,108,117,.07);
+}
+
+.rail-ev-item.ev-medium {
+    border-left-color: var(--amber);
+    background: rgba(232,163,61,.06);
+}
+
+.rail-ev-item.ev-low {
+    border-left-color: var(--amber-dim);
+}
+
+.rail-ev-item.ev-info {
+    border-left-color: var(--line);
+}
+
+/* Off the scale: a scanner error is not a weak finding, it is the absence of a
+   finding, and reading it as one would inflate the detection rate. */
+.rail-ev-item.ev-unknown {
+    border-left-style: dashed;
+    border-left-color: var(--muted);
+    background: var(--panel-3);
+}
+
+/* ---------- Comparison matrix ----------------------------------------- */
+
+.matrix-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+}
+
+.matrix {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+    min-width: 720px;
+}
+
+    .matrix th {
+        text-align: left;
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: .16em;
+        text-transform: uppercase;
+        color: var(--muted);
+        font-weight: 500;
+        padding: 12px 14px;
+        background: var(--panel-2);
+        border-bottom: 1px solid var(--line);
+        white-space: nowrap;
+    }
+
+    .matrix td {
+        padding: 13px 14px;
+        border-bottom: 1px solid var(--line-soft);
+        vertical-align: top;
+    }
+
+    .matrix tr:last-child td {
+        border-bottom: 0;
+    }
+
+    .matrix tbody tr {
+        background: var(--panel);
+    }
+
+        .matrix tbody tr.ours {
+            background: var(--panel-2);
+        }
+
+.scanner-name {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text);
+}
+
+    .scanner-name .ours-mark {
+        color: var(--amber);
+        margin-right: 6px;
+    }
+
+.cell-reason {
+    color: var(--muted);
+    font-size: 12px;
+    max-width: 42ch;
+}
+
+.cell-ms {
+    font-family: var(--mono);
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.outcome {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    white-space: nowrap;
+}
+
+.outcome-text {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+}
+
+    .outcome-text.pass {
+        color: var(--jade);
+    }
+
+    .outcome-text.fail {
+        color: var(--rose);
+    }
+
+    .outcome-text.rewrite {
+        color: var(--amber);
+    }
+
+.run-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 22px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    margin: 0 0 16px;
+}
+
+    .run-meta code {
+        color: var(--text-dim);
+        word-break: break-all;
+    }
+
+/* ---------- Legend ---------------------------------------------------- */
+
+.legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line-soft);
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ---------- Files list ------------------------------------------------ */
+
+.file-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+}
+
+.file-row {
+    display: grid;
+    grid-template-columns: 74px 1fr auto;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--line-soft);
+    background: var(--panel);
+}
+
+    .file-row:last-child {
+        border-bottom: 0;
+    }
+
+.pill {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: var(--r);
+    border: 1px solid var(--line);
+    color: var(--text-dim);
+    text-align: center;
+}
+
+    .pill.profile {
+        border-color: var(--jade-dim);
+        color: var(--jade);
+    }
+
+    .pill.id {
+        border-color: var(--amber-dim);
+        color: var(--amber);
+    }
+
+.file-name {
+    font-family: var(--mono);
+    font-size: 12px;
+    word-break: break-all;
+}
+
+    .file-name a {
+        color: var(--text-dim);
+        text-decoration: none;
+        border-bottom: 1px solid var(--line);
+    }
+
+        .file-name a:hover {
+            color: var(--amber);
+            border-bottom-color: var(--amber-dim);
+        }
+
+.file-size {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Empty / notice -------------------------------------------- */
+
+.empty {
+    border: 1px dashed var(--line);
+    border-radius: var(--r);
+    padding: 34px 22px;
+    text-align: center;
+    color: var(--muted);
+    background: var(--panel);
+}
+
+.notice {
+    border: 1px solid var(--line);
+    border-left: 2px solid var(--amber);
+    background: var(--panel);
+    border-radius: var(--r);
+    padding: 14px 16px;
+    color: var(--text-dim);
+    font-size: 12.5px;
+    margin-bottom: 22px;
+}
+
+    .notice strong {
+        color: var(--amber);
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+        display: block;
+        margin-bottom: 4px;
+    }
+
+.foot {
+    margin-top: 44px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 12px;
+}
+
+/* ---------- Responsive & accessibility -------------------------------- */
+
+@media (max-width: 820px) {
+    .grid {
+        grid-template-columns: 1fr;
+    }
+
+    .app {
+        padding: 0 16px 56px;
+    }
+
+    .topbar {
+        flex-wrap: wrap;
+    }
+
+    .demo-flag {
+        margin-left: 0;
+    }
+
+    .rail-node {
+        grid-template-columns: 22px 1fr auto;
+    }
+
+    .rail-ms {
+        grid-column: 2 / -1;
+        text-align: left;
+        min-width: 0;
+    }
+
+    .rail-ev-kind {
+        margin-left: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation: none !important;
+        transition: none !important;
+    }
+}
